@@ -32,8 +32,7 @@ def set_all_seeds(seed: int) -> None:
 
 def affine_numpy(X: np.ndarray, W: np.ndarray, b: np.ndarray) -> np.ndarray:
     """Return X @ W + b without a Python loop."""
-    raise NotImplementedError
-
+    return X @ W + b
 
 def standardize_columns(
     X: np.ndarray,
