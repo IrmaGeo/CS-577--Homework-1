@@ -20,7 +20,14 @@ except ImportError:  # Allows NumPy-only public tests to import this file.
 
 def set_all_seeds(seed: int) -> None:
     """Seed Python, NumPy, PyTorch, and all CUDA devices when available."""
-    raise NotImplementedError
+    random.seed(seed)
+    np.random.seed(seed)
+
+    if torch is not None:
+        torch.manual_seed(seed)
+
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
 
 
 def affine_numpy(X: np.ndarray, W: np.ndarray, b: np.ndarray) -> np.ndarray:
