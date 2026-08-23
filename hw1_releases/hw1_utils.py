@@ -38,7 +38,10 @@ def standardize_columns(
     X: np.ndarray,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Columnwise population standardization with safe constant columns."""
-    raise NotImplementedError
+    x_mean=np.mean(X, axis=0)
+    x_std=np.std(X, axis=0, ddof=0)
+    Z=(X-x_mean)/x_std
+    return Z, x_mean, x_std
 
 
 def pairwise_squared_distances(A: np.ndarray, B: np.ndarray) -> np.ndarray:
