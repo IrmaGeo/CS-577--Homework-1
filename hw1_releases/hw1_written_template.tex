@@ -13,7 +13,26 @@
 \section*{Part 1: LaTeX and Mathematical Communication}
 
 \subsection*{1.1 Tensor notation}
-% Replace this comment with your typeset statement and dimension declarations.
+
+Typest the following statement cleanly, including dimensions:
+\begin{quote}
+For a batch $X$ with shape $(B,D)$, weights $W$ with shape $(D,K)$,
+and bias $b$ with shape $(K,)$, the affine output is
+
+\[
+Y = XW + 1_Bb^T
+\]
+
+and has shape $(B,K)$
+\end{quote}
+\noindent
+Here, $1_B \in \mathbb{R}^{B \times 1}$ denotes the all-ones column vector. Therefore, $1_Bb^T \in \mathbb{R}^{B \times K}$ repeats the bias vector $b^T$ once for each of the $B$ examples. This is the mathematical form of broadcasting $b$ across the batch dimension in the NumPy/PyTorch expression 
+
+\[
+Y = XW + b
+\]
+\noindent
+Use mathematical notation rather than copying the monospace statement verbatim.
 
 \subsection*{1.2 Regularized mean-squared error}
 % Typeset J(w), derive the gradient, and show enough intermediate reasoning.
