@@ -46,7 +46,9 @@ def standardize_columns(
 
 def pairwise_squared_distances(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     """Return all pairwise squared Euclidean distances, shape (M, N)."""
-    raise NotImplementedError
+    D2=(A.reshape(A.shape[0],1,A.shape[1])-B.reshape(1, B.shape[0], B.shape[1]))**2
+    D2=D2.sum(-1)
+    return D2
 
 
 if nn is not None:
