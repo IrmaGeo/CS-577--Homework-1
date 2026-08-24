@@ -65,21 +65,68 @@ and its gradient with respect to $w$
 
 \subsection*{2.1 Shapes and broadcasting}
 % State shapes, explain broadcasting, and report Y.
+shapes: X.shape=$(4, 3)$
+W.shape= $(3, 2)$ 
+b.shape=$(2,)$ 
+Y.shape=$(4, 2)$
+\\
+$X @ W$ is matrix multiplication. Since $X$ has shape $(4,3)$ and $W$ has shape $(3,2)$, the inner dimensions match $(3 = 3)$, so the result has shape $(4,2)$. The bias $b$ has shape $(2,)$. Broadcasting compares dimensions from right to left, so $(2,)$ is treated like $(1,2)$. Since $2 = 2$ and 1 can expand to 4, $b$ is broadcast to shape $(4,2)$ and added to every row of $X @ W$.
+\[
+Y =
+\begin{bmatrix}
+4.25 & -3.75 \\
+0.25 & 5.25 \\
+-2.25 & -0.75 \\
+-1.25 & 4.25
+\end{bmatrix}
+\]
+
 
 \subsection*{2.2 Standardization}
 % Report mean, standard deviation, and checks on Z.
 
+\noindent\textbf{mean:}
+\[
+[0.5,\ 0.25,\ 1.25]
+\]
+
+\noindent\textbf{std:}
+\[
+[1.11803399,\ 1.47901995,\ 1.47901995]
+\]
+
+\noindent\textbf{check mean:}
+\[
+[0.0,\ -1.38777878\times10^{-17},\ 0.0]
+\]
+
+\noindent\textbf{check std:}
+\[
+[1,\ 1,\ 1]
+\]
+
+
 \subsection*{2.3 Pairwise squared distances}
 % Report D2 and explain the inserted singleton dimensions.
 
+\[
+D2=
+\begin{bmatrix}
+2 & 1\\
+1 & 4 \\
+2 & 5
+\end{bmatrix}
+\]
+
+\noindent
+The inserted singleton dimensions allow broadcasting to compare every row of A with every row of B simultaneously, without a Python loop.
 \subsection*{2.4 Vectorization timing}
 % Report the benchmark setup, median times, and a careful interpretation.
 
 \section*{Part 3: PyTorch Tensors and a Minimal Model}
 
 \subsection*{3.1--3.2 Agreement, dtype, and device}
-% Report maximum NumPy/PyTorch difference and answer the dtype/device question.
-
+Tensors participating in an operation generally need to be on the same device because CPU and GPU memory are separate. Their dtypes also need to be compatible; otherwise PyTorch may raise an error or perform a type conversion. Explicitly choosing both the device and dtype makes the computation predictable
 \subsection*{3.3--3.4 Model and training}
 % Summarize architecture and training results; detailed code belongs in the notebook.
 
