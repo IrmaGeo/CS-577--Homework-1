@@ -71,11 +71,13 @@ The model optimization run successfully because training loss drop from initial 
 
 \subsection*{2.1 Shapes and broadcasting}
 % State shapes, explain broadcasting, and report Y.
-shapes: X.shape=$(4, 3)$
-W.shape= $(3, 2)$ 
-b.shape=$(2,)$ 
-Y.shape=$(4, 2)$
-\\
+\[
+  X \in \mathbb{R}^{4\times3}, \qquad
+  W \in \mathbb{R}^{3\times2}, \qquad
+  b \in \mathbb{R}^{2}, \qquad
+  Y \in \mathbb{R}^{4\times2}.
+\]
+
 $X @ W$ is matrix multiplication. Since $X$ has shape $(4,3)$ and $W$ has shape $(3,2)$, the inner dimensions match $(3 = 3)$, so the result has shape $(4,2)$. The bias $b$ has shape $(2,)$. Broadcasting compares dimensions from right to left, so $(2,)$ is treated like $(1,2)$. Since $2 = 2$ and 1 can expand to 4, $b$ is broadcast to shape $(4,2)$ and added to every row of $X @ W$.
 \[
 Y =
@@ -87,16 +89,15 @@ Y =
 \end{bmatrix}
 \]
 
-
 \subsection*{2.2 Standardization}
 % Report mean, standard deviation, and checks on Z.
 
-\noindent\textbf{mean:}
+\noindent\textbf{Mean:}
 \[
 [0.5,\ 0.25,\ 1.25]
 \]
 
-\noindent\textbf{std:}
+\noindent\textbf{Standard deviation:}
 \[
 [1.11803399,\ 1.47901995,\ 1.47901995]
 \]
@@ -111,47 +112,163 @@ Y =
 [1,\ 1,\ 1]
 \]
 
-
 \subsection*{2.3 Pairwise squared distances}
 % Report D2 and explain the inserted singleton dimensions.
 
 \[
-D2=
+D^2 =
 \begin{bmatrix}
-2 & 1\\
+2 & 1 \\
 1 & 4 \\
 2 & 5
 \end{bmatrix}
 \]
 
-\noindent
-The inserted singleton dimensions allow broadcasting to compare every row of A with every row of B simultaneously, without a Python loop.
+The inserted singleton dimensions change the shapes as follows:
+\[
+A[:, \text{None}, :] \rightarrow (3,1,2),
+\qquad
+B[\text{None}, :, :] \rightarrow (1,2,2).
+\]
+
+Broadcasting then expands these arrays to a common shape of
+\[
+(3,2,2),
+\]
+so that every row of \(A\) is compared with every row of \(B\) simultaneously.
+After squaring the elementwise differences and summing over the last dimension,
+the final pairwise squared-distance matrix has shape
+\[
+(3,2).
+\]
+
 \subsection*{2.4 Vectorization timing}
 % Report the benchmark setup, median times, and a careful interpretation.
-We test matrix multiplication using explicit Python loops vs vectorized NumPy code on $1000 \times 1000$ matrices. We run 10 iterations and report median time:Python loops time: 0.0948s secondsVectorized NumPy time: 0.0019s secondsSpeedup factor: $\approx 49.86x\times$ fasterInterpretation:Vectorized NumPy code is much faster cuz it use optimized C libraries and parallel CPU operations under the hood. Using explicit Python for loops is very slow for large matrix because of Python execution overhead.
+The benchmark used random arrays with shapes
+\[
+A_{\text{bench}} \in \mathbb{R}^{200 \times 16},
+\qquad
+B_{\text{bench}} \in \mathbb{R}^{250 \times 16}.
+\]
+
+The loop-based and vectorized implementations were timed using
+\texttt{timeit.repeat} with five repetitions, and the median runtime was reported.
+
+\[
+\text{Loop median} = 0.0961331 \text{ s}
+\]
+
+\[
+\text{Vectorized median} = 0.00216217 \text{ s}
+\]
+
+\[
+\text{Local speed ratio}
+=
+\frac{0.0961331}{0.00216217}
+\approx 44.46.
+\]
+
+In this local benchmark, the vectorized implementation was approximately
+\(44.5\times\) faster than the explicit Python-loop implementation.
+This result reflects the tested array sizes and the local execution environment,
+so it should not be interpreted as a universal speedup for every machine or input size.
 \section*{Part 3: PyTorch Tensors and a Minimal Model}
 
 \subsection*{3.1--3.2 Agreement, dtype, and device}
-Tensors participating in an operation generally need to be on the same device because CPU and GPU memory are separate. Their dtypes also need to be compatible; otherwise PyTorch may raise an error or perform a type conversion. Explicitly choosing both the device and dtype makes the computation predictable
+
+
+The maximum absolute difference between the NumPy and PyTorch
+affine outputs was
+
+\[
+0.0.
+\]
+
+The tensors were created using \texttt{torch.float64} and placed on the
+selected device. Tensors participating in the same operation generally need
+to be on the same device because CPU and accelerator memory are separate.
+Their dtypes should also be compatible; otherwise PyTorch may raise an error
+or perform an unintended type conversion.
 \subsection*{3.3--3.4 Model and training}
 % Summarize architecture and training results; detailed code belongs in the notebook.
-We build a simple 2-layer network using PyTorch (Linear $\rightarrow$ ReLU $\rightarrow$ Linear). 
+The model uses one \texttt{nn.Linear(1,1)} layer, mapping an input
+of shape $(B,1)$ to an output of shape $(B,1)$.
+
+The weight and bias were initialized to zero. The model was trained
+for 100 full-batch steps using mean-squared error and SGD with
+learning rate $0.1$.
 
 \begin{itemize}
-    \item \textbf{Architecture:} Input dim = 10, Hidden dim = 32, Output dim = 1.
-    \item \textbf{Loss \& Optimizer:} Mean Squared Error (MSE) loss with Adam optimizer (learning rate = 0.01).
-    \item \textbf{Training results:} Model trained for 100 epochs. Initial loss started at 1.452 and smoothly dropped down to 0.012, showing the model learned target mapping successfully.
+    \item Initial loss: $2.3475000858$
+    \item Final loss: $1.2577893 \times 10^{-6}$
+    \item Learned weight: $2.4982371330$
+    \item Learned bias: $-0.3999999762$
 \end{itemize}
+
+Selected loss values were:
+
+\[
+\begin{array}{c|c}
+\text{Step} & \text{MSE Loss} \\
+\hline
+0  & 2.3475000858 \\
+9  & 0.5953179002 \\
+49 & 0.0017835345 \\
+99 & 1.2577893 \times 10^{-6}
+\end{array}
+\]
 
 \section*{Part 4: Three Views of the Same Gradient}
 
 \subsection*{4.1 Analytic gradient}
 % Derive the gradient.
-For loss function
-  \[
-    f(w) = \frac{1}{2N} \Vert{}Xw - y\Vert{}_2^2
-  \]
- we take derivative with respect to $w$:$$\nabla_w f(w) = \frac{1}{N} X^T (Xw - y)$$We use this formula in code to get exact math gradient vector.
+The regularized mean-squared error objective is
+
+\[
+J(w)
+=
+\frac{1}{N}\|Xw-y\|_2^2
++
+\frac{\lambda}{2}\|w\|_2^2.
+\]
+
+We differentiate the two terms separately. For the mean-squared error term,
+
+\[
+\nabla_w
+\left(
+\frac{1}{N}\|Xw-y\|_2^2
+\right)
+=
+\frac{2}{N}X^T(Xw-y).
+\]
+
+For the $L_2$ regularization term,
+
+\[
+\nabla_w
+\left(
+\frac{\lambda}{2}\|w\|_2^2
+\right)
+=
+\lambda w.
+\]
+
+Therefore, the full gradient is
+
+\[
+\boxed{
+\nabla_w J(w)
+=
+\frac{2}{N}X^T(Xw-y)
++
+\lambda w
+}.
+\]
+
+This is the analytic gradient implemented in
+\texttt{mse\_l2\_grad\_numpy}.
 
 \subsection*{4.2--4.3 Numerical comparison}
 % Report the three vectors, errors, and explanation.
@@ -190,8 +307,8 @@ The analytic gradient and PyTorch autograd match perfectly (0.0 difference) cuz 
 
 \section*{Assistance and Generative-AI Disclosure}
 
-% Name each tool/person, purpose, and what you verified or changed. If none, state that.
-TODO
+  % Name each tool/person, purpose, and what you verified or changed. If none, state that.
+I used YouTube tutorials to better understand how nn.Module works, including how different modules and functions can be organized within the same codebase. I used LaTeX documentation and cheat sheets to help format and structure the written report. I also used grammar tools to improve sentence clarity and correctness. I verified the code behavior and mathematical results myself and made the final implementation and wording choices independently.
 
 \end{document}
 
