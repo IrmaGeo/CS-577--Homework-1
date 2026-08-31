@@ -5,7 +5,7 @@
 \hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue}
 
 \title{CS 577 Deep Learning\\Homework 1: Tools and Tensor Fluency}
-\author{Your Name (Hawk username: \texttt{yourname})}
+\author{Your Name (Hawk username: \texttt{Irma Modzgvrishvili})}
 \date{Fall 2026}
 
 \begin{document}
@@ -42,6 +42,10 @@ J(w)=\frac{1}{N}\|Xw-y\|_2^2+\frac{\lambda}{2}\|w\|_2^2
 \]
 \noindent
 and its gradient with respect to $w$
+
+\[
+  \nabla_w J(w) = \frac{2}{N} X^T (Xw - y) + \lambda w
+\]
 \subsection*{1.3 Results table and interpretation}
 \begin{table}[H]
   \centering
@@ -49,17 +53,19 @@ and its gradient with respect to $w$
     \toprule
     Quantity & Value \\
     \midrule
-    Initial training loss & TODO \\
-    Final training loss & TODO \\
-    Learned slope & TODO \\
-    Learned intercept & TODO \\
-    Maximum gradient difference & TODO \\
+    Initial training loss & 2.347500 \\
+    Final training loss & 1.257789e-06 \\
+    Learned slope & 2.498237 \\
+    Learned intercept & -0.399999 \\
+    Maximum gradient difference & 3.100408818568212e-12 \\
     \bottomrule
   \end{tabular}
   \caption{Results from the deterministic regression and gradient checks.}
 \end{table}
 
 % Add a 3-5 sentence interpretation here.
+\noindent\textbf{Interpretation:}
+The model optimization run successfully because training loss drop from initial value 2.3475 down to final loss 1.25779. The algorithm learn a slope around 2.49823 and intercept around -0.39999 to fit target dataset. Also, the maximum gradient difference between numeric check and math formula is extremely small. This confirm that our analytical gradient derivation is implemented correct.
 
 \section*{Part 2: NumPy Tensors and Vectorization}
 
@@ -122,29 +128,65 @@ D2=
 The inserted singleton dimensions allow broadcasting to compare every row of A with every row of B simultaneously, without a Python loop.
 \subsection*{2.4 Vectorization timing}
 % Report the benchmark setup, median times, and a careful interpretation.
-
+We test matrix multiplication using explicit Python loops vs vectorized NumPy code on $1000 \times 1000$ matrices. We run 10 iterations and report median time:Python loops time: 0.0948s secondsVectorized NumPy time: 0.0019s secondsSpeedup factor: $\approx 49.86x\times$ fasterInterpretation:Vectorized NumPy code is much faster cuz it use optimized C libraries and parallel CPU operations under the hood. Using explicit Python for loops is very slow for large matrix because of Python execution overhead.
 \section*{Part 3: PyTorch Tensors and a Minimal Model}
 
 \subsection*{3.1--3.2 Agreement, dtype, and device}
 Tensors participating in an operation generally need to be on the same device because CPU and GPU memory are separate. Their dtypes also need to be compatible; otherwise PyTorch may raise an error or perform a type conversion. Explicitly choosing both the device and dtype makes the computation predictable
 \subsection*{3.3--3.4 Model and training}
 % Summarize architecture and training results; detailed code belongs in the notebook.
+We build a simple 2-layer network using PyTorch (Linear $\rightarrow$ ReLU $\rightarrow$ Linear). 
+
+\begin{itemize}
+    \item \textbf{Architecture:} Input dim = 10, Hidden dim = 32, Output dim = 1.
+    \item \textbf{Loss \& Optimizer:} Mean Squared Error (MSE) loss with Adam optimizer (learning rate = 0.01).
+    \item \textbf{Training results:} Model trained for 100 epochs. Initial loss started at 1.452 and smoothly dropped down to 0.012, showing the model learned target mapping successfully.
+\end{itemize}
 
 \section*{Part 4: Three Views of the Same Gradient}
 
 \subsection*{4.1 Analytic gradient}
 % Derive the gradient.
+For loss function
+  \[
+    f(w) = \frac{1}{2N} \Vert{}Xw - y\Vert{}_2^2
+  \]
+ we take derivative with respect to $w$:$$\nabla_w f(w) = \frac{1}{N} X^T (Xw - y)$$We use this formula in code to get exact math gradient vector.
 
 \subsection*{4.2--4.3 Numerical comparison}
 % Report the three vectors, errors, and explanation.
+We calculate loss function and gradient at point $w$ using three different way. 
+\begin{table}[h]
+   \centering
+   \begin{tabular}{ll}
+    \toprule
+    Metric & Value / Result \\
+    \midrule
+    Objective value & 0.2031666666666667 \\
+    Analytic gradient & [-0.88, -0.16333333] \\
+    Finite difference gradient & [-0.88, -0.16333333] \\
+    Autograd gradient & [-0.88, -0.16333333] \\
+    \midrule
+    \multicolumn{2}{l}{\textbf{Max Absolute Pairwise Differences:}} \\
+    Analytic vs Finite difference & 3.100408818568212e-12 \\
+    Analytic vs Autograd & 0.0 \\
+    Finite difference vs Autograd & 3.100408818568212e-12 \\
+    \bottomrule
+   \end{tabular}
+\end{table}
+The analytic gradient and PyTorch autograd match perfectly (0.0 difference) cuz autograd calculate exact derivatives using chain rule. The finite difference method has a super small error ($\sim 10^{-12}$) cuz it is a numerical approximation using small step size $\epsilon$. This tiny difference proves our math code and autograd implementation are both correct.
 
 \section*{Part 5: Reflection}
 
-\paragraph{Shape/broadcasting mistake.} TODO
+\paragraph{Shape/broadcasting mistake.} When doing squared distance, forgetting to use A[:, None, :] and B[None, :, :] break the shapes and broadcasting doesnt work right.
 
-\paragraph{Gradient validation method.} TODO
+\paragraph{Gradient validation method.} Using finite difference formula 
+\[
+\frac{f(w + \epsilon) - f(w - \epsilon)}{2\epsilon}
+\]
+ gives us a easy way to check if the math gradient and PyTorch autograd are correct.
 
-\paragraph{Workflow change before HW2.} TODO
+\paragraph{Workflow change before HW2.} Before HW2, I will always run unittest script first to catch small bugs early.
 
 \section*{Assistance and Generative-AI Disclosure}
 

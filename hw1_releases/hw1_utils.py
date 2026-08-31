@@ -9,6 +9,7 @@ import random
 from typing import Tuple
 
 import numpy as np
+import torch
 
 try:
     import torch
@@ -40,7 +41,9 @@ def standardize_columns(
     """Columnwise population standardization with safe constant columns."""
     x_mean=np.mean(X, axis=0)
     x_std=np.std(X, axis=0, ddof=0)
-    Z=(X-x_mean)/x_std
+    safe_std = np.where(x_std == 0, 1.0, x_std)
+    Z = (X - x_mean) / safe_std
+    Z[:, x_std == 0] = 0.0
     return Z, x_mean, x_std
 
 
@@ -56,10 +59,10 @@ if nn is not None:
 
         def __init__(self) -> None:
             super().__init__()
-            raise NotImplementedError
+            self.linear=nn.Linear(1,1)
 
         def forward(self, x):
-            raise NotImplementedError
+            return self.linear(x)
 
 else:
 
@@ -70,26 +73,56 @@ else:
 
 def train_tiny_regressor(model, x_train, y_train, steps: int = 100, lr: float = 0.1):
     """Train with full-batch SGD and return a list of scalar losses."""
-    raise NotImplementedError
-
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    losses = []
+    model.train()
+    for _i in range(steps):
+        optimizer.zero_grad()
+        predictions=model(x_train)
+        loss=criterion(predictions,y_train)
+        loss.backward()
+        optimizer.step()
+        losses.append(loss.item())
+    return losses
 
 def mse_l2_objective_numpy(
     X: np.ndarray, y: np.ndarray, w: np.ndarray, lam: float
 ) -> float:
     """Mean squared error plus 0.5 * lam * ||w||_2^2."""
-    raise NotImplementedError
+    residual = X @ w - y
+    mse = np.mean(residual ** 2)
+    l2_reg = 0.5 * lam * np.sum(w ** 2)
+    return float(mse + l2_reg)
 
 
 def mse_l2_grad_numpy(
     X: np.ndarray, y: np.ndarray, w: np.ndarray, lam: float
 ) -> np.ndarray:
     """Analytic gradient of mse_l2_objective_numpy."""
-    raise NotImplementedError
+    N = X.shape[0]
+    residual = X @ w - y
+    grad_mse = (2.0 / N) * (X.T @ residual)
+    grad_l2 = lam * w
+    return grad_mse + grad_l2
 
 
 def finite_difference_gradient(
     objective, w: np.ndarray, epsilon: float = 1e-5
 ) -> np.ndarray:
     """Centered finite-difference gradient of a scalar objective(objective(w))."""
-    raise NotImplementedError
+    grad = np.zeros_like(w, dtype=np.float64)
+    
+    w_base = w.astype(np.float64, copy=True)
+
+    for i in range(len(w_base)):
+        w_plus = w_base.copy()
+        w_minus = w_base.copy()
+
+        w_plus[i] += epsilon
+        w_minus[i] -= epsilon
+
+        grad[i] = (objective(w_plus) - objective(w_minus)) / (2.0 * epsilon)
+
+    return grad
 
